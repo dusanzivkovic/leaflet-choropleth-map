@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+    <script src="./js/leaflet-providers.js"></script>
+    <script src="./js/choropleth.js"></script>
+    <title>Leaflet Choropleth Map Example</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="./js/us-states.geojson"></script>
+    
+    <script>
+
+        const carto = L.tileLayer.provider('CartoDB.Voyager',{
+            subdomains: 'abcd',
+	        maxZoom: 19
+        })
+
+        const esri = L.tileLayer.provider('Esri.WorldStreetMap');
+
+        const basemaps = {
+            "Carto": carto,
+            "Esri": esri
+        }
+
+        const map = new L.Map('map', {
+            center: new L.LatLng(37.8, -96),
+            zoom: 5,
+            layers: [carto, esri]
+        })
+
+        L.control.layers(basemaps).addTo(map);
+
+        const choroplethLayer = L.choropleth(statesData, {
+            valueProperty: 'density',
+            colors: ['#ffffb2', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a','#e31a1c', '#b10026'],
+            steps: 7,
+            mode: 'q',
+            style: {
+                color: '#fff', 
+                weight: 2,
+                fillOpacity: 0.8
+            },
+            onEachFeature: function(feature, layer) {
+                layer.bindPopup('<strong>' + feature.properties.name + '</strong>'+ '<br>' + 'Density: ' + feature.properties.density)
+            }
+        }).addTo(map)
+
+        const legend = L.control({ position: 'bottomright' })
+        
+        legend.onAdd = (map) => {
+            const div = L.DomUtil.create('div', 'info legend')
+            const limits = choroplethLayer.options.limits
+            const colors = choroplethLayer.options.colors
+            const labels = []
+
+            div.innerHTML = '<div class="labels"><div class="min">' + limits[0] + '</div> <div class="max">' + limits[limits.length - 1] + '</div></div>'
+
+            limits.forEach((limit, index) => {
+                labels.push('<li style="background-color: ' + colors[index] + '"></li>')
+            })
+
+            div.innerHTML += '<ul>' + labels.join('') + '</ul>'
+            return div
+        }
+
+        legend.addTo(map)
+
+        L.control.scale().addTo(map)
+
+    </script>
+
+</body>
+</html>
